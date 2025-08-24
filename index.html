@@ -2,49 +2,131 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sérgio Imports - Sistema de Gestão</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <title>Sérgio Imports - Sistema PDV</title>
     
+    <!-- PWA Configuration -->
+    <meta name="theme-color" content="#1f2937" media="(prefers-color-scheme: dark)">
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-    <meta name="theme-color" content="#111827" media="(prefers-color-scheme: dark)">
-    <link rel="apple-touch-icon" href="/apple-touch-icon.svg" sizes="180x180">
+    
+    <!-- Apple PWA Configuration -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Sérgio PDV">
+    <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" sizes="180x180">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="64x64" href="/pwa-64x64.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/pwa-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/pwa-512x512.png">
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="/manifest.webmanifest">
 
-    <meta name="description" content="Sistema de gestão completo para vendas, estoque e PDV da Sérgio Imports" />
+    <!-- SEO and Social -->
+    <meta name="description" content="Sistema PDV completo da Sérgio Imports para gestão de vendas, estoque, etiquetas, trocas e notificações em tempo real" />
     <meta name="author" content="Sérgio Imports" />
+    <meta name="keywords" content="PDV, sistema de vendas, gestão, estoque, etiquetas, trocas, notificações, Sérgio Imports" />
 
-    <meta property="og:title" content="Sérgio Imports - Sistema de Gestão" />
-    <meta property="og:description" content="Sistema de gestão completo para vendas, estoque e PDV da Sérgio Imports" />
+    <meta property="og:title" content="Sérgio Imports - Sistema PDV" />
+    <meta property="og:description" content="Sistema PDV completo para gestão de vendas, estoque, etiquetas, trocas e notificações em tempo real" />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://sergio-imports.com" />
-    <meta property="og:image" content="https://ibb.co/67X3xfSV" />
-    <meta property="og:image:width" content="960" />
-    <meta property="og:image:height" content="600" />
-    <meta property="og:image:alt" content="Sistema de Gestão Sérgio Imports" />
+    <meta property="og:url" content="https://sergio-imports-pdv.netlify.app" />
+    <meta property="og:image" content="/pwa-512x512.png" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+    <meta property="og:image:alt" content="Sistema PDV Sérgio Imports" />
     
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Sérgio Imports - Sistema de Gestão" />
-    <meta name="twitter:description" content="Sistema de gestão completo para vendas, estoque e PDV da Sérgio Imports" />
-    <meta name="twitter:image" content="https://ibb.co/67X3xfSV" />
+    <meta name="twitter:title" content="Sérgio Imports - Sistema PDV" />
+    <meta name="twitter:description" content="Sistema PDV completo para gestão de vendas, estoque, etiquetas, trocas e notificações em tempo real" />
+    <meta name="twitter:image" content="/pwa-512x512.png" />
 
-    <link rel="canonical" href="https://sergio-imports.com" />
+    <link rel="canonical" href="https://sergio-imports-pdv.netlify.app" />
 
-     <script type="application/ld+json">
+    <!-- Structured Data -->
+    <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "Sérgio Imports",
-      "url": "https://sergio-imports.com",
-      "description": "Sistema de gestão completo para vendas, estoque e PDV da Sérgio Imports",
-      "publisher": {
+      "@type": "SoftwareApplication",
+      "name": "Sérgio Imports - Sistema PDV",
+      "description": "Sistema PDV completo para gestão de vendas, estoque, etiquetas, trocas e notificações em tempo real",
+      "url": "https://sergio-imports-pdv.netlify.app",
+      "author": {
         "@type": "Organization",
-        "name": "Sérgio Imports"
+        "name": "Sérgio Imports",
+        "url": "https://sergio-imports.com"
+      },
+      "operatingSystem": "Any",
+      "applicationCategory": "BusinessApplication",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "BRL"
       }
     }
     </script>
+
+    <!-- Preload Critical Resources -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    
+    <!-- PWA Install Prompt -->
+    <script>
+      // PWA Install Prompt
+      let deferredPrompt;
+      
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        
+        // Criar botão de instalação se necessário
+        const installButton = document.createElement('button');
+        installButton.textContent = 'Instalar App';
+        installButton.style.cssText = `
+          position: fixed;
+          bottom: 20px;
+          right: 20px;
+          z-index: 1000;
+          background: #3b82f6;
+          color: white;
+          border: none;
+          padding: 12px 24px;
+          border-radius: 8px;
+          font-weight: bold;
+          cursor: pointer;
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        `;
+        
+        installButton.addEventListener('click', async () => {
+          if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            deferredPrompt = null;
+            installButton.remove();
+          }
+        });
+        
+        document.body.appendChild(installButton);
+        
+        // Remover botão após 10 segundos se não usado
+        setTimeout(() => {
+          if (installButton.parentNode) {
+            installButton.remove();
+          }
+        }, 10000);
+      });
+      
+      // Detectar quando o app foi instalado
+      window.addEventListener('appinstalled', () => {
+        console.log('PWA foi instalado com sucesso!');
+      });
+    </script>
   </body>
 </html>

@@ -4,6 +4,7 @@ import { AppProvider, useApp } from './contexts/AppContext';
 import Sidebar from './components/Layout/Sidebar';
 import Header from './components/Layout/Header';
 import LoadingScreen from './components/Layout/LoadingScreen';
+import PWAInstallPrompt from './components/Layout/PWAInstallPrompt';
 import ReceiptModal from './components/PDV/ReceiptModal';
 
 // Lazy load components for better performance
@@ -93,6 +94,9 @@ function AppContent() {
       {isReceiptModalOpen && lastCompletedSale && (
         <ReceiptModal sale={lastCompletedSale} onClose={closeReceiptModal} />
       )}
+
+      {/* PWA Install Prompt */}
+      <PWAInstallPrompt />
 
       <Toaster
         position="top-right"
