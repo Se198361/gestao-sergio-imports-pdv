@@ -10,13 +10,19 @@ export default defineConfig({
       injectRegister: 'auto',
       devOptions: {
         enabled: true,
-        type: 'module'
+        type: 'module',
+        navigateFallback: 'index.html'
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,ico,png,jpg,jpeg,woff,woff2}'],
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
+        sourcemap: false,
+        navigateFallback: 'index.html',
+        navigateFallbackDenylist: [/^\/api\//],
+        // Cachear mais agressivamente para PWA
+        maximumFileSizeToCacheInBytes: 5000000,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
@@ -42,7 +48,7 @@ export default defineConfig({
           }
         ]
       },
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'logo.svg'],
+      includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png', 'pwa-192x192.png', 'pwa-512x512.png'],
       manifest: {
         name: 'Sérgio Imports - Sistema PDV',
         short_name: 'Sérgio PDV',
@@ -52,10 +58,16 @@ export default defineConfig({
         display: 'standalone',
         scope: '/',
         start_url: '/',
-        orientation: 'portrait-primary',
+        orientation: 'any',
         categories: ['business', 'productivity', 'finance'],
         lang: 'pt-BR',
         dir: 'ltr',
+        // Critérios essenciais para Chrome
+        prefer_related_applications: false,
+        display_override: ['window-controls-overlay', 'standalone'],
+        edge_side_panel: {
+          preferred_width: 400
+        },
         icons: [
           {
             src: 'pwa-64x64.png',
@@ -82,21 +94,7 @@ export default defineConfig({
             src: 'apple-touch-icon-180x180.png',
             sizes: '180x180',
             type: 'image/png',
-            purpose: 'apple'
-          }
-        ],
-        screenshots: [
-          {
-            src: 'screenshot-wide.png',
-            sizes: '1280x720',
-            type: 'image/png',
-            form_factor: 'wide'
-          },
-          {
-            src: 'screenshot-narrow.png',
-            sizes: '720x1280',
-            type: 'image/png',
-            form_factor: 'narrow'
+            purpose: 'any'
           }
         ]
       },

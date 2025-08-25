@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCw, Plus, Eye, Printer, X, User, Package, DollarSign, Calendar } from 'lucide-react';
+import { RefreshCw, Plus, Eye, Printer, X, User, Package, DollarSign, Calendar, Trash2 } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import NeuCard from '../Layout/NeuCard';
 import NeuButton from '../Layout/NeuButton';
@@ -18,7 +18,7 @@ const exchangeReasons = [
 const statusOptions = ['Pendente', 'Concluída', 'Cancelada'];
 
 export default function Exchanges() {
-  const { darkMode, exchanges, sales, addExchange, updateExchange, settings } = useApp();
+  const { darkMode, exchanges, sales, addExchange, updateExchange, deleteExchange, settings } = useApp();
   const [showForm, setShowForm] = useState(false);
   const [selectedExchange, setSelectedExchange] = useState(null);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
@@ -71,6 +71,21 @@ export default function Exchanges() {
   const printExchangeReceipt = (exchange) => {
     setSelectedExchange(exchange);
     setShowReceiptModal(true);
+  };
+
+  // Função para excluir troca com confirmação
+  const handleDeleteExchange = (exchange) => {
+    const confirmDelete = window.confirm(
+      `Tem certeza que deseja excluir a troca #${exchange.id}?\n\n` +
+      `Motivo: ${exchange.reason}\n` +
+      `Status: ${exchange.status}\n` +
+      `Data: ${format(new Date(exchange.date), "dd/MM/yyyy", { locale: ptBR })}\n\n` +
+      `Esta ação não pode ser desfeita.`
+    );
+
+    if (confirmDelete) {
+      deleteExchange(exchange.id);
+    }
   };
 
   return (
@@ -177,6 +192,7 @@ export default function Exchanges() {
                         variant="secondary"
                         size="sm"
                         onClick={() => showExchangeDetails(exchange)}
+                        title="Ver detalhes"
                       >
                         <Eye className="w-4 h-4" />
                       </NeuButton>
@@ -186,10 +202,20 @@ export default function Exchanges() {
                           variant="primary"
                           size="sm"
                           onClick={() => printExchangeReceipt(exchange)}
+                          title="Imprimir recibo"
                         >
                           <Printer className="w-4 h-4" />
                         </NeuButton>
                       )}
+                      <NeuButton
+                        darkMode={darkMode}
+                        variant="danger"
+                        size="sm"
+                        onClick={() => handleDeleteExchange(exchange)}
+                        title="Excluir troca"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </NeuButton>
                     </div>
                   </td>
                 </tr>

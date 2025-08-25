@@ -17,6 +17,15 @@ const initialState = {
   searchTerm: '',
   lastCompletedSale: null,
   notifications: [],
+  cashRegister: {
+    isOpen: false,
+    openingAmount: 0,
+    openingDate: null,
+    closingDate: null,
+    dailySales: [],
+    dailyExchanges: [],
+    dailyProducts: []
+  },
 };
 
 function appReducer(state, action) {
@@ -77,6 +86,53 @@ function appReducer(state, action) {
         notifications: state.notifications.map(n => 
           n.id === action.payload ? { ...n, read: true } : n
         )
+      };
+    case 'OPEN_CASH_REGISTER':
+      return {
+        ...state,
+        cashRegister: {
+          ...state.cashRegister,
+          isOpen: true,
+          openingAmount: action.payload.amount,
+          openingDate: action.payload.date,
+          closingDate: null,
+          dailySales: [],
+          dailyExchanges: [],
+          dailyProducts: []
+        }
+      };
+    case 'CLOSE_CASH_REGISTER':
+      return {
+        ...state,
+        cashRegister: {
+          ...state.cashRegister,
+          isOpen: false,
+          closingDate: action.payload.date
+        }
+      };
+    case 'ADD_DAILY_SALE':
+      return {
+        ...state,
+        cashRegister: {
+          ...state.cashRegister,
+          dailySales: [...state.cashRegister.dailySales, action.payload]
+        }
+      };
+    case 'ADD_DAILY_EXCHANGE':
+      return {
+        ...state,
+        cashRegister: {
+          ...state.cashRegister,
+          dailyExchanges: [...state.cashRegister.dailyExchanges, action.payload]
+        }
+      };
+    case 'ADD_DAILY_PRODUCT':
+      return {
+        ...state,
+        cashRegister: {
+          ...state.cashRegister,
+          dailyProducts: [...state.cashRegister.dailyProducts, action.payload]
+        }
       };
     default:
       return state;
@@ -315,10 +371,39 @@ export function AppProvider({ children }) {
       // Criar notificação de venda
       addSaleNotification({ ...fullSaleData, id: saleId });
       
+      // Adicionar ao relatório diário se o caixa estiver aberto
+      if (state.cashRegister.isOpen) {
+        dispatch({ type: 'ADD_DAILY_SALE', payload: { ...fullSaleData, id: saleId } });
+      }
+      
       return { ...fullSaleData, id: saleId };
     } catch (error) {
       toast.error('Erro ao processar venda');
       throw error;
+    }
+  };
+
+  const deleteSale = async (id) => {
+    try {
+      // Primeiro, recuperar os dados da venda para restaurar o estoque
+      const sale = await dbService.get('sales', id);
+      if (sale) {
+        // Restaurar o estoque dos produtos vendidos
+        for (const item of sale.items) {
+          const product = await dbService.get('products', item.productId);
+          if (product) {
+            product.stock += item.quantity;
+            await dbService.put('products', product);
+          }
+        }
+        
+        // Excluir a venda
+        await dbService.delete('sales', id);
+        await loadAllData();
+        toast.success('Venda excluída com sucesso! Estoque restaurado.');
+      }
+    } catch (error) {
+      toast.error('Erro ao excluir venda');
     }
   };
 
@@ -329,6 +414,11 @@ export function AppProvider({ children }) {
       
       // Criar notificação de troca
       addExchangeNotification({ ...exchange, id: exchangeId });
+      
+      // Adicionar ao relatório diário se o caixa estiver aberto
+      if (state.cashRegister.isOpen) {
+        dispatch({ type: 'ADD_DAILY_EXCHANGE', payload: { ...exchange, id: exchangeId } });
+      }
       
       toast.success('Troca registrada com sucesso!');
     } catch (error) {
@@ -346,6 +436,16 @@ export function AppProvider({ children }) {
       }
     } catch (error) {
       toast.error('Erro ao atualizar status da troca.');
+    }
+  };
+
+  const deleteExchange = async (id) => {
+    try {
+      await dbService.delete('exchanges', id);
+      await loadAllData();
+      toast.success('Troca excluída com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao excluir troca');
     }
   };
 
@@ -415,6 +515,86 @@ export function AppProvider({ children }) {
     });
   };
 
+  // Funções de controle do caixa PDV
+  const openCashRegister = (amount) => {
+    const openingData = {
+      amount: Number(amount),
+      date: new Date().toISOString()
+    };
+    dispatch({ type: 'OPEN_CASH_REGISTER', payload: openingData });
+    toast.success(`Caixa aberto com R$ ${Number(amount).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`);
+  };
+
+  const closeCashRegister = () => {
+    const closingData = {
+      date: new Date().toISOString()
+    };
+    dispatch({ type: 'CLOSE_CASH_REGISTER', payload: closingData });
+    toast.success('Caixa fechado com sucesso!');
+  };
+
+  const addToDailyReport = (type, data) => {
+    if (state.cashRegister.isOpen) {
+      switch (type) {
+        case 'sale':
+          dispatch({ type: 'ADD_DAILY_SALE', payload: data });
+          break;
+        case 'exchange':
+          dispatch({ type: 'ADD_DAILY_EXCHANGE', payload: data });
+          break;
+        case 'product':
+          dispatch({ type: 'ADD_DAILY_PRODUCT', payload: data });
+          break;
+      }
+    }
+  };
+
+  const generateDailyReport = () => {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Filtrar vendas do dia
+    const todaySales = state.sales.filter(sale => {
+      const saleDate = new Date(sale.date).toISOString().split('T')[0];
+      return saleDate === today;
+    });
+
+    // Filtrar trocas do dia
+    const todayExchanges = state.exchanges.filter(exchange => {
+      const exchangeDate = new Date(exchange.date).toISOString().split('T')[0];
+      return exchangeDate === today;
+    });
+
+    // Calcular totais
+    const totalSales = todaySales.reduce((sum, sale) => sum + sale.total, 0);
+    const totalSalesCount = todaySales.length;
+    const totalExchangesCount = todayExchanges.length;
+    
+    // Produtos vendidos
+    const productsSold = {};
+    todaySales.forEach(sale => {
+      sale.items.forEach(item => {
+        if (productsSold[item.name]) {
+          productsSold[item.name] += item.quantity;
+        } else {
+          productsSold[item.name] = item.quantity;
+        }
+      });
+    });
+
+    return {
+      openingAmount: state.cashRegister.openingAmount,
+      openingDate: state.cashRegister.openingDate,
+      closingDate: new Date().toISOString(),
+      sales: todaySales,
+      exchanges: todayExchanges,
+      totalSales,
+      totalSalesCount,
+      totalExchangesCount,
+      productsSold,
+      dailyProducts: state.cashRegister.dailyProducts
+    };
+  };
+
   const value = {
     ...state,
     toggleDarkMode,
@@ -426,8 +606,10 @@ export function AppProvider({ children }) {
     updateClient,
     deleteClient,
     processSale,
+    deleteSale,
     addExchange,
     updateExchange,
+    deleteExchange,
     updateSettings,
     loadAllData,
     // Funções de notificação
@@ -435,7 +617,12 @@ export function AppProvider({ children }) {
     markNotificationRead,
     removeNotification,
     clearAllNotifications,
-    checkLowStockProducts
+    checkLowStockProducts,
+    // Funções de controle do caixa
+    openCashRegister,
+    closeCashRegister,
+    addToDailyReport,
+    generateDailyReport
   };
 
   return (

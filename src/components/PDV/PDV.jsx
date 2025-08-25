@@ -1,18 +1,33 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Plus, Minus, Trash2, ShoppingCart, CreditCard } from 'lucide-react';
+import { Search, Plus, Minus, Trash2, ShoppingCart, CreditCard, Lock, Unlock } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import NeuCard from '../Layout/NeuCard';
 import NeuButton from '../Layout/NeuButton';
 import NeuInput from '../Layout/NeuInput';
 import PaymentModal from './PaymentModal';
 import ProductSelector from './ProductSelector';
+import OpenCashModal from './OpenCashModal';
+import CloseCashModal from './CloseCashModal';
 import toast from 'react-hot-toast';
 
 export default function PDV() {
-  const { darkMode, products, cart, dispatch, processSale } = useApp();
+  const { 
+    darkMode, 
+    products, 
+    cart, 
+    dispatch, 
+    processSale, 
+    cashRegister,
+    openCashRegister,
+    closeCashRegister,
+    generateDailyReport
+  } = useApp();
   const [showProductSelector, setShowProductSelector] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showOpenCashModal, setShowOpenCashModal] = useState(false);
+  const [showCloseCashModal, setShowCloseCashModal] = useState(false);
+  const [dailyReport, setDailyReport] = useState(null);
   const [discount, setDiscount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -84,6 +99,27 @@ export default function PDV() {
     }
   };
 
+  const handleOpenCash = async (amount) => {
+    try {
+      openCashRegister(amount);
+      setShowOpenCashModal(false);
+    } catch (error) {
+      toast.error('Erro ao abrir caixa');
+    }
+  };
+
+  const handleCloseCash = () => {
+    const report = generateDailyReport();
+    setDailyReport(report);
+    setShowCloseCashModal(true);
+  };
+
+  const handleConfirmCloseCash = () => {
+    closeCashRegister();
+    setDailyReport(null);
+    setShowCloseCashModal(false);
+  };
+
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.barcode?.includes(searchTerm)
@@ -100,68 +136,134 @@ export default function PDV() {
       <div className="lg:col-span-2 space-y-6">
         <NeuCard darkMode={darkMode} neonBorder>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 animate-glow">
-              PDV - Ponto de Venda
-            </h2>
-            <NeuButton 
-              darkMode={darkMode} 
-              neon 
-              onClick={() => setShowProductSelector(true)}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Adicionar Produto
-            </NeuButton>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 animate-glow">
+                PDV - Ponto de Venda
+              </h2>
+              <div className="flex items-center space-x-4 mt-2">
+                <div className={`flex items-center space-x-2 px-3 py-1 rounded-full text-sm ${
+                  cashRegister.isOpen 
+                    ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' 
+                    : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
+                }`}>
+                  {cashRegister.isOpen ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                  <span>{cashRegister.isOpen ? 'Caixa Aberto' : 'Caixa Fechado'}</span>
+                </div>
+                {cashRegister.isOpen && (
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    Valor inicial: {cashRegister.openingAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              {!cashRegister.isOpen ? (
+                <NeuButton 
+                  darkMode={darkMode} 
+                  variant="primary"
+                  onClick={() => setShowOpenCashModal(true)}
+                >
+                  <Unlock className="w-4 h-4 mr-2" />
+                  Abrir Caixa
+                </NeuButton>
+              ) : (
+                <>
+                  <NeuButton 
+                    darkMode={darkMode} 
+                    variant="secondary"
+                    onClick={handleCloseCash}
+                  >
+                    <Lock className="w-4 h-4 mr-2" />
+                    Fechar Caixa
+                  </NeuButton>
+                  <NeuButton 
+                    darkMode={darkMode} 
+                    neon 
+                    onClick={() => setShowProductSelector(true)}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Adicionar Produto
+                  </NeuButton>
+                </>
+              )}
+            </div>
           </div>
 
-          <NeuInput
-            darkMode={darkMode}
-            neon
-            placeholder="Buscar produto por nome ou código de barras..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="mb-6"
-          />
+          {cashRegister.isOpen && (
+            <NeuInput
+              darkMode={darkMode}
+              neon
+              placeholder="Buscar produto por nome ou código de barras..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="mb-6"
+            />
+          )}
         </NeuCard>
 
         {/* Products Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
-          {filteredProducts.map((product) => (
-            <motion.div
-              key={product.id}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <NeuCard darkMode={darkMode} hover className="cursor-pointer" onClick={() => addToCart(product)}>
-                <div className="flex items-center space-x-3">
-                  {product.image ? (
-                    <img 
-                      src={product.image} 
-                      alt={product.name}
-                      className="w-12 h-12 object-cover rounded-lg"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                      <span className="text-white font-bold text-lg">
-                        {product.name.charAt(0)}
-                      </span>
+        {cashRegister.isOpen && (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
+            {filteredProducts.map((product) => (
+              <motion.div
+                key={product.id}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <NeuCard darkMode={darkMode} hover className="cursor-pointer" onClick={() => addToCart(product)}>
+                  <div className="flex items-center space-x-3">
+                    {product.image ? (
+                      <img 
+                        src={product.image} 
+                        alt={product.name}
+                        className="w-12 h-12 object-cover rounded-lg"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        <span className="text-white font-bold text-lg">
+                          {product.name.charAt(0)}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-800 dark:text-gray-200 truncate">
+                        {product.name}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-500">
+                        Estoque: {product.stock}
+                      </p>
                     </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-800 dark:text-gray-200 truncate">
-                      {product.name}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-500">
-                      Estoque: {product.stock}
-                    </p>
                   </div>
-                </div>
-              </NeuCard>
-            </motion.div>
-          ))}
-        </div>
+                </NeuCard>
+              </motion.div>
+            ))}
+          </div>
+        )}
+
+        {!cashRegister.isOpen && (
+          <NeuCard darkMode={darkMode}>
+            <div className="text-center py-12">
+              <Lock className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                Caixa Fechado
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                Para iniciar as vendas, abra o caixa informando o valor inicial.
+              </p>
+              <NeuButton 
+                darkMode={darkMode} 
+                variant="primary"
+                onClick={() => setShowOpenCashModal(true)}
+              >
+                <Unlock className="w-4 h-4 mr-2" />
+                Abrir Caixa
+              </NeuButton>
+            </div>
+          </NeuCard>
+        )}
       </div>
 
       {/* Cart Section */}
@@ -264,7 +366,7 @@ export default function PDV() {
               darkMode={darkMode}
               variant="primary"
               className="w-full"
-              disabled={cart.length === 0}
+              disabled={cart.length === 0 || !cashRegister.isOpen}
               onClick={() => setShowPaymentModal(true)}
             >
               <CreditCard className="w-4 h-4 mr-2" />
@@ -296,6 +398,25 @@ export default function PDV() {
           onClose={() => setShowPaymentModal(false)}
           onConfirm={handlePayment}
           total={total}
+        />
+      )}
+
+      {showOpenCashModal && (
+        <OpenCashModal
+          isOpen={showOpenCashModal}
+          onClose={() => setShowOpenCashModal(false)}
+          onConfirm={handleOpenCash}
+          darkMode={darkMode}
+        />
+      )}
+
+      {showCloseCashModal && (
+        <CloseCashModal
+          isOpen={showCloseCashModal}
+          onClose={() => setShowCloseCashModal(false)}
+          onConfirm={handleConfirmCloseCash}
+          dailyReport={dailyReport}
+          darkMode={darkMode}
         />
       )}
     </motion.div>

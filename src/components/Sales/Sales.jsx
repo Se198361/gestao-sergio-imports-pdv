@@ -1,18 +1,21 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { BarChart3, Search, Calendar, User, X } from 'lucide-react';
+import { BarChart3, Search, Calendar, User, X, Eye, Trash2 } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import NeuCard from '../Layout/NeuCard';
 import NeuInput from '../Layout/NeuInput';
 import NeuButton from '../Layout/NeuButton';
+import SaleDetailsModal from './SaleDetailsModal';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export default function Sales() {
-  const { darkMode, sales } = useApp();
+  const { darkMode, sales, deleteSale } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedSale, setSelectedSale] = useState(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   // Função para filtrar vendas
   const filteredSales = useMemo(() => {
@@ -38,6 +41,38 @@ export default function Sales() {
 
   // Verificar se há filtros ativos
   const hasActiveFilters = searchTerm || dateFilter;
+
+  // Função para abrir detalhes da venda
+  const openSaleDetails = (sale) => {
+    setSelectedSale(sale);
+    setIsDetailsModalOpen(true);
+  };
+
+  // Função para fechar modal de detalhes
+  const closeSaleDetails = () => {
+    setSelectedSale(null);
+    setIsDetailsModalOpen(false);
+  };
+
+  // Função para excluir venda com confirmação
+  const handleDeleteSale = (sale) => {
+    const totalItems = sale.items.reduce((acc, item) => acc + item.quantity, 0);
+    const itemsList = sale.items.map(item => `• ${item.quantity}x ${item.name}`).join('\n');
+    
+    const confirmDelete = window.confirm(
+      `Tem certeza que deseja excluir a venda #${sale.id}?\n\n` +
+      `Cliente: ${sale.client?.name || 'Não identificado'}\n` +
+      `Data: ${format(new Date(sale.date), "dd/MM/yyyy HH:mm", { locale: ptBR })}\n` +
+      `Total: ${sale.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n` +
+      `Itens (${totalItems}):\n${itemsList}\n\n` +
+      `ATENÇÃO: O estoque dos produtos será restaurado automaticamente.\n` +
+      `Esta ação não pode ser desfeita.`
+    );
+
+    if (confirmDelete) {
+      deleteSale(sale.id);
+    }
+  };
 
   return (
     <motion.div
@@ -160,6 +195,7 @@ export default function Sales() {
                 <th scope="col" className="px-6 py-3">Itens</th>
                 <th scope="col" className="px-6 py-3">Total</th>
                 <th scope="col" className="px-6 py-3">Pagamento</th>
+                <th scope="col" className="px-6 py-3">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -189,6 +225,32 @@ export default function Sales() {
                       {sale.paymentMethod}
                     </span>
                   </td>
+                  <td className="px-6 py-4">
+                    <div className="flex space-x-2">
+                      <NeuButton
+                        darkMode={darkMode}
+                        variant="primary"
+                        size="sm"
+                        onClick={() => openSaleDetails(sale)}
+                        className="flex items-center space-x-1 text-xs"
+                        title="Ver detalhes"
+                      >
+                        <Eye className="w-3 h-3" />
+                        <span>Detalhes</span>
+                      </NeuButton>
+                      <NeuButton
+                        darkMode={darkMode}
+                        variant="danger"
+                        size="sm"
+                        onClick={() => handleDeleteSale(sale)}
+                        className="flex items-center space-x-1 text-xs"
+                        title="Excluir venda"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span>Excluir</span>
+                      </NeuButton>
+                    </div>
+                  </td>
                 </motion.tr>
               ))}
             </tbody>
@@ -215,6 +277,14 @@ export default function Sales() {
           )}
         </div>
       </NeuCard>
+
+      {/* Modal de Detalhes da Venda */}
+      <SaleDetailsModal
+        sale={selectedSale}
+        isOpen={isDetailsModalOpen}
+        onClose={closeSaleDetails}
+        darkMode={darkMode}
+      />
     </motion.div>
   );
 }

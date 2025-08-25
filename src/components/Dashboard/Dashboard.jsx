@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, Package, Users, DollarSign, ShoppingCart, AlertTriangle, Bell } from 'lucide-react';
+import { TrendingUp, Package, Users, DollarSign, ShoppingCart, AlertTriangle, Bell, Download } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import NeuCard from '../Layout/NeuCard';
 import { format } from 'date-fns';
@@ -8,6 +8,36 @@ import { ptBR } from 'date-fns/locale';
 
 export default function Dashboard() {
   const { darkMode, products, clients, sales, cart, notifications } = useApp();
+
+  // Função de teste PWA
+  const testPWAInstall = () => {
+    console.log('Teste PWA - Criando evento simulado');
+    
+    // Simular evento beforeinstallprompt
+    const mockEvent = {
+      preventDefault: () => console.log('preventDefault called'),
+      prompt: () => {
+        console.log('prompt called');
+        return Promise.resolve();
+      },
+      userChoice: Promise.resolve({ outcome: 'accepted' })
+    };
+    
+    // Disparar evento customizado
+    const customEvent = new CustomEvent('beforeinstallprompt', {
+      detail: mockEvent
+    });
+    
+    window.dispatchEvent(customEvent);
+    
+    // Forçar exibição do modal
+    sessionStorage.removeItem('pwa-prompt-dismissed');
+    
+    // Recarregar componente PWA
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+  };
 
   // Calculate statistics
   const totalProducts = products.length;
@@ -86,6 +116,14 @@ export default function Dashboard() {
             <p className="text-lg font-semibold text-gray-700 dark:text-gray-300">
               Vendas hoje: {todaySales}
             </p>
+            {/* Botão de teste PWA - remover em produção */}
+            <button
+              onClick={testPWAInstall}
+              className="mt-2 px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors"
+            >
+              <Download className="w-3 h-3 inline mr-1" />
+              Testar PWA
+            </button>
           </div>
         </div>
       </NeuCard>
